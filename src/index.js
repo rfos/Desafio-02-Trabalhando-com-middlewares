@@ -1,3 +1,4 @@
+// eslint-disable-next-line strict
 const express = require('express');
 const cors = require('cors');
 
@@ -20,43 +21,44 @@ function checksExistsUserAccount(request, response, next) {
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
+  const user = request.user;
 
-  // const { id } = request.params;
-  // const { user } = request;
-
-  // const todos = user.todos;
-
-  // const todo = todos.find(todo => id === todo.id);
-
-  // if (!todo) {
-  //   return response.status(404).json({ error: "Todo not found!" });
-  // }
-
-  // request.todo = todo;
+  if (user.todos.length >= 10 && !user.pro) {
+    return response
+      .status(403)
+      .json({ error: 'Number of Todos for plan free is full' });
+  }
 
   return next();
 }
 
 function checksTodoExists(request, response, next) {
-  
+  const { username } = request.headers;
   const { id } = request.params;
-  const { user } = request;
 
-  const todos = user.todos;
+  const user = users.find((user) => user.username === username);
 
-  const todo = todos.find(todo => id === todo.id);
-
-  if (!todo) {
-    return response.status(404).json({ error: "Todo not found!" });
+  if (!user) {
+    return response.status(404).json({ error: 'User not found' });
   }
 
+  if (!validate(id)) {
+    return response.status(400).json({ error: "Id isn't valid UUID" });
+  }
+  const todo = user.todos.find((todo) => todo.id === id);
+
+  if (!todo) {
+    return response.status(404).json({ error: 'Todo not found' });
+  }
+
+  request.user = user;
   request.todo = todo;
 
+  
   return next();
 }
 
 function findUserById(request, response, next) {
-  
   
   const {id} = request.params;
   
@@ -65,7 +67,7 @@ function findUserById(request, response, next) {
     return response.status(404).json({error: 'User not found'});
   
   }
-  const username = users.filter((user) => user.id === id);
+  
   request.user = user;
   
   return next();
@@ -94,10 +96,7 @@ app.post('/users', (request, response) => {
 });
 
 app.get('/users/:id', findUserById, (request, response) => {
-  
   const { user } = request;
-
-
   return response.json(user);
 });
 
